@@ -28,7 +28,10 @@ user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command"""
-    chat_id = update.effective_chat.id
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    if chat_id is None:
+        logging.error("Received update with no chat information.")
+        return
 
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
@@ -48,7 +51,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def form_command(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /form command"""
-    chat_id = update.effective_chat.id
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    if chat_id is None:
+        logging.error("Received update with no chat information.")
+        return ConversationHandler.END
 
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
@@ -150,7 +156,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def help_command(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show help message"""
-    chat_id = update.effective_chat.id
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    if chat_id is None:
+        logging.error("Received update with no chat information.")
+        return
 
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
