@@ -1,0 +1,60 @@
+i want to create a python script for playwright for a browser automation of filling a form but for that it will require to sign in use standard methods like .env file where i will store credentials in format 
+username - xxxxx
+password - xxxxx
+then you will create flask server as i want it to be done from my phone telegram bot like 
+i will send bot a message /start and it will wake this repl and give me message "Server is active" if server is running else the error 
+then i will send /form then it will ask id then i will pass id then it will ask notescount then i will give a number then it will ask note then i will give a note then it will send to flask server and the server will perfrom following things 
+
+firstly it will go to this website 
+
+https://issue.acmepadm.com:8445/redmine/issues/{id}
+
+where the link should be changed according to the id
+
+then it will ask for login 
+
+this is login form 
+<form onsubmit="return keepAnchorOnSignIn(this);" action="/redmine/login" accept-charset="UTF-8" name="form-fd23b7c1" method="post"><input name="utf8" type="hidden" value="✓"><input type="hidden" name="authenticity_token" value="9eJ8kz0Uqe4loj2CWWDwPa03hL4qRoqCY04Ka_U-_y29n96-U6y2iF6yUP-6Xb9srir2JcqkWEfMaJWeUl7jjA">
+  <input type="hidden" name="back_url" value="/redmine/issues/118375">
+  
+  <label for="username">Login</label>
+  <input type="text" name="username" id="username" tabindex="1">
+  
+  <label for="password">
+    Password
+    <a class="lost_password" href="/redmine/account/lost_password">Lost password</a>
+  </label>
+  <input type="password" name="password" id="password" tabindex="2">
+  
+  
+  
+  <input type="submit" name="login" value="Login" tabindex="5" id="login-submit">
+</form>
+
+here you will add the credentials and do login then on that page go for edit button 
+
+<a onclick="showAndScrollTo(&quot;update&quot;, &quot;issue_notes&quot;); return false;" class="icon icon-edit __web-inspector-hide-shortcut__" accesskey="e" href="/redmine/issues/118375/edit">Edit</a>
+
+then after pressing edit you will go in this notes 
+
+<fieldset><legend>Notes</legend>
+      <textarea cols="60" rows="10" class="wiki-edit" data-auto-complete="true" name="issue[notes]" id="issue_notes" data-tribute="true"></textarea>
+      
+
+      <input name="issue[private_notes]" type="hidden" value="0"><input type="checkbox" value="1" name="issue[private_notes]" id="issue_private_notes"> <label for="issue_private_notes">Private notes</label>
+
+      
+      </fieldset>
+
+write the note and then click on checkbox of private notes and then press submit
+
+<input type="submit" name="commit" value="Submit" data-disable-with="Submit">
+
+the process of edit add note submit should be done according to the notes count taken 
+
+and in notes i will just write 
+1) xxxx
+2) xxxx
+if i given notescount as 2
+
+and then after this message you get you will close all and add a return message on telegram that note is sccessfully added to {id}
