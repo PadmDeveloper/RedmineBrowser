@@ -32,38 +32,39 @@ class RedmineAutomator:
                 
                 # Navigate to the issue page
                 url = f"https://issue.acmepadm.com:8445/redmine/issues/{issue_id}"
-                await page.goto(url)
+                await page.goto(url,wait_until='networkidle')
                 
                 # Wait for login form and fill credentials
-                await page.wait_for_selector('#username')
-                await page.fill('#username', self.username)
-                await page.fill('#password', self.password)
+                await page.wait_for_selector('input#username')
+                await page.fill('input#username', self.username)
+                await page.fill('input#password', self.password)
                 
                 # Click login button
-                await page.click('#login-submit')
+                await page.click('input#login-submit')
                 
                 # Wait for page to load after login
                 await page.wait_for_load_state('networkidle')
+                await page.goto(url, wait_until='networkidle')
                 
                 # Process notes based on notes_count
                 for i in range(notes_count):
                     # Click edit button
-                    await page.click('a.icon-edit')
+                    await page.click('a.icon-edit, a[href$="/edit"]')
                     
                     # Wait for the notes textarea to be available
-                    await page.wait_for_selector('#issue_notes')
+                    await page.wait_for_selector('textarea#issue_notes')
                     
                     # Format the note with numbering
                     formatted_note = f"{i + 1}) {note_text}"
                     
                     # Fill the notes textarea
-                    await page.fill('#issue_notes', formatted_note)
+                    await page.fill('textarea#issue_notes', formatted_note)
                     
                     # Check the private notes checkbox
-                    await page.check('#issue_private_notes')
+                    await page.check('input#issue_private_notes')
                     
                     # Submit the form
-                    await page.click('input[type="submit"][value="Submit"]')
+                    await page.click('input[type=submit][name=commit][value=Submit][data-disable-with=Submit]')
                     
                     # Wait for the page to reload
                     await page.wait_for_load_state('networkidle')
@@ -110,7 +111,9 @@ def add_note():
             return jsonify({"success": False, "error": message}), 500
             
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Log the exception or print it for debugging
+        print(f"Error: {str(e)}")
+        return f"An error occurred: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
