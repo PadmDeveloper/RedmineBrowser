@@ -14,8 +14,8 @@ logging.basicConfig(level=logging.INFO)
 
 class RedmineAutomator:
     def __init__(self):
-        self.username = os.getenv('USERNAME')
-        self.password = os.getenv('PASSWORD')
+        self.username = os.environ.get('USERNAME') or os.getenv('USERNAME')
+        self.password = os.environ.get('PASSWORD') or os.getenv('PASSWORD')
         
     async def add_note_to_issue(self, issue_id, notes_count, note_text):
         """Automate the process of adding notes to a Redmine issue"""

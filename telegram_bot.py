@@ -1,3 +1,4 @@
+
 import os
 import asyncio
 import requests
@@ -6,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from dotenv import load_dotenv
 import logging
 
-# Load environment variables
+# Load environment variables (Replit secrets take precedence)
 load_dotenv()
 
 # Enable logging
@@ -14,10 +15,18 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO)
 
-# Bot token and authorized chat ID
-BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-AUTHORIZED_CHAT_ID = int(os.getenv('AUTHORIZED_CHAT_ID'))
+# Bot token and authorized chat ID (prioritize Replit environment)
+BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN') or os.getenv('TELEGRAM_BOT_TOKEN')
+AUTHORIZED_CHAT_ID = os.environ.get('AUTHORIZED_CHAT_ID') or os.getenv('AUTHORIZED_CHAT_ID')
 FLASK_SERVER_URL = "http://localhost:5000"  # Change to your actual server URL when deployed
+
+# Convert AUTHORIZED_CHAT_ID to int if it exists
+if AUTHORIZED_CHAT_ID:
+    try:
+        AUTHORIZED_CHAT_ID = int(AUTHORIZED_CHAT_ID)
+    except ValueError:
+        print("Error: AUTHORIZED_CHAT_ID must be a valid integer")
+        AUTHORIZED_CHAT_ID = None
 
 # Conversation states
 WAITING_FOR_ID, WAITING_FOR_NOTES_COUNT, WAITING_FOR_NOTE = range(3)
@@ -28,6 +37,10 @@ user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command"""
+    if not update.message:
+        logging.error("Received update with no message.")
+        return
+        
     chat_id = update.effective_chat.id if update.effective_chat else None
     if chat_id is None:
         logging.error("Received update with no chat information.")
@@ -51,6 +64,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def form_command(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /form command"""
+    if not update.message:
+        logging.error("Received update with no message.")
+        return ConversationHandler.END
+        
     chat_id = update.effective_chat.id if update.effective_chat else None
     if chat_id is None:
         logging.error("Received update with no chat information.")
@@ -67,6 +84,9 @@ async def form_command(update: Update,
 async def get_issue_id(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get issue ID from user"""
+    if not update.message or not update.message.text:
+        return WAITING_FOR_ID
+        
     issue_id = update.message.text.strip()
 
     # Validate issue ID (should be numeric)
@@ -83,6 +103,9 @@ async def get_issue_id(update: Update,
 async def get_notes_count(update: Update,
                           context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get notes count from user"""
+    if not update.message or not update.message.text:
+        return WAITING_FOR_NOTES_COUNT
+        
     notes_count = update.message.text.strip()
 
     # Validate notes count (should be numeric and positive)
@@ -99,6 +122,9 @@ async def get_notes_count(update: Update,
 async def get_note_text(update: Update,
                         context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get note text and process the request"""
+    if not update.message or not update.message.text:
+        return WAITING_FOR_NOTE
+        
     note_text = update.message.text.strip()
 
     if not note_text:
@@ -148,6 +174,9 @@ async def get_note_text(update: Update,
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancel the conversation"""
+    if not update.message:
+        return ConversationHandler.END
+        
     await update.message.reply_text("❌ Operation cancelled")
     user_data.clear()
     return ConversationHandler.END
@@ -156,6 +185,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def help_command(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show help message"""
+    if not update.message:
+        logging.error("Received update with no message.")
+        return
+        
     chat_id = update.effective_chat.id if update.effective_chat else None
     if chat_id is None:
         logging.error("Received update with no chat information.")
@@ -185,12 +218,14 @@ async def help_command(update: Update,
 
 def main():
     """Start the bot"""
-    if not BOT_TOKEN:
-        print("Error: TELEGRAM_BOT_TOKEN not found in environment variables")
+    if not BOT_TOKEN or BOT_TOKEN == 'your_telegram_bot_token_here':
+        print("Error: TELEGRAM_BOT_TOKEN not found or not set properly in environment variables")
+        print("Please check your .env file or Replit Secrets")
         return
 
     if not AUTHORIZED_CHAT_ID:
-        print("Error: AUTHORIZED_CHAT_ID not found in environment variables")
+        print("Error: AUTHORIZED_CHAT_ID not found or not set properly in environment variables")
+        print("Please check your .env file or Replit Secrets")
         return
 
     # Create application
