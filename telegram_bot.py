@@ -1,4 +1,3 @@
-
 import os
 import asyncio
 import requests
@@ -13,8 +12,7 @@ load_dotenv()
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+    level=logging.INFO)
 
 # Bot token and authorized chat ID
 BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -27,14 +25,15 @@ WAITING_FOR_ID, WAITING_FOR_NOTES_COUNT, WAITING_FOR_NOTE = range(3)
 # Store conversation data
 user_data = {}
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command"""
     chat_id = update.effective_chat.id
-    
+
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
         return
-    
+
     try:
         # Check if Flask server is running
         response = requests.get(f"{FLASK_SERVER_URL}/", timeout=5)
@@ -45,56 +44,68 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except requests.exceptions.RequestException:
         await update.message.reply_text("❌ Server is not responding")
 
-async def form_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+async def form_command(update: Update,
+                       context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle /form command"""
     chat_id = update.effective_chat.id
-    
+
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
         return ConversationHandler.END
-    
+
     await update.message.reply_text("📝 Please enter the issue ID:")
     return WAITING_FOR_ID
 
-async def get_issue_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+async def get_issue_id(update: Update,
+                       context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get issue ID from user"""
     issue_id = update.message.text.strip()
-    
+
     # Validate issue ID (should be numeric)
     if not issue_id.isdigit():
-        await update.message.reply_text("❌ Invalid ID. Please enter a numeric issue ID:")
+        await update.message.reply_text(
+            "❌ Invalid ID. Please enter a numeric issue ID:")
         return WAITING_FOR_ID
-    
+
     user_data['issue_id'] = issue_id
     await update.message.reply_text("🔢 Please enter the notes count:")
     return WAITING_FOR_NOTES_COUNT
 
-async def get_notes_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+async def get_notes_count(update: Update,
+                          context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get notes count from user"""
     notes_count = update.message.text.strip()
-    
+
     # Validate notes count (should be numeric and positive)
     if not notes_count.isdigit() or int(notes_count) <= 0:
-        await update.message.reply_text("❌ Invalid count. Please enter a positive number:")
+        await update.message.reply_text(
+            "❌ Invalid count. Please enter a positive number:")
         return WAITING_FOR_NOTES_COUNT
-    
+
     user_data['notes_count'] = int(notes_count)
     await update.message.reply_text("📝 Please enter the note text:")
     return WAITING_FOR_NOTE
 
-async def get_note_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+async def get_note_text(update: Update,
+                        context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get note text and process the request"""
     note_text = update.message.text.strip()
-    
+
     if not note_text:
-        await update.message.reply_text("❌ Note text cannot be empty. Please enter the note:")
+        await update.message.reply_text(
+            "❌ Note text cannot be empty. Please enter the note:")
         return WAITING_FOR_NOTE
-    
+
     user_data['note_text'] = note_text
-    
+
     # Show processing message
-    await update.message.reply_text("⏳ Processing your request... This may take a moment.")
-    
+    await update.message.reply_text(
+        "⏳ Processing your request... This may take a moment.")
+
     try:
         # Send request to Flask server
         payload = {
@@ -102,9 +113,11 @@ async def get_note_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             'notes_count': user_data['notes_count'],
             'note_text': user_data['note_text']
         }
-        
-        response = requests.post(f"{FLASK_SERVER_URL}/add_note", json=payload, timeout=60)
-        
+
+        response = requests.post(f"{FLASK_SERVER_URL}/add_note",
+                                 json=payload,
+                                 timeout=60)
+
         if response.status_code == 200:
             result = response.json()
             if result.get('success'):
@@ -113,19 +126,19 @@ async def get_note_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                 )
             else:
                 await update.message.reply_text(
-                    f"❌ Error: {result.get('error', 'Unknown error')}"
-                )
+                    f"❌ Error: {result.get('error', 'Unknown error')}")
         else:
             await update.message.reply_text("❌ Server error occurred")
-            
+
     except requests.exceptions.RequestException as e:
         await update.message.reply_text(f"❌ Connection error: {str(e)}")
     except Exception as e:
         await update.message.reply_text(f"❌ Unexpected error: {str(e)}")
-    
+
     # Clear user data
     user_data.clear()
     return ConversationHandler.END
+
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancel the conversation"""
@@ -133,14 +146,16 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_data.clear()
     return ConversationHandler.END
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+async def help_command(update: Update,
+                       context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show help message"""
     chat_id = update.effective_chat.id
-    
+
     if chat_id != AUTHORIZED_CHAT_ID:
         await update.message.reply_text("❌ Unauthorized access")
         return
-    
+
     help_text = """
 🤖 **Redmine Bot Commands:**
 
@@ -158,38 +173,43 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     await update.message.reply_text(help_text)
 
+
 def main():
     """Start the bot"""
     if not BOT_TOKEN:
         print("Error: TELEGRAM_BOT_TOKEN not found in environment variables")
         return
-    
+
     if not AUTHORIZED_CHAT_ID:
         print("Error: AUTHORIZED_CHAT_ID not found in environment variables")
         return
-    
+
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
-    
+
     # Create conversation handler
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('form', form_command)],
         states={
-            WAITING_FOR_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_issue_id)],
-            WAITING_FOR_NOTES_COUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_notes_count)],
-            WAITING_FOR_NOTE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_note_text)],
+            WAITING_FOR_ID:
+            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_issue_id)],
+            WAITING_FOR_NOTES_COUNT:
+            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_notes_count)],
+            WAITING_FOR_NOTE:
+            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_note_text)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )
-    
+
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(conv_handler)
-    
+
     # Run the bot
     print("🤖 Bot starting...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+
 
 if __name__ == '__main__':
     main()
