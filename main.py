@@ -20,10 +20,11 @@ class RedmineAutomator:
     async def add_note_to_issue(self, issue_id, notes_count, note_text):
         """Automate the process of adding notes to a Redmine issue"""
         async with async_playwright() as p:
-            # Launch browser in headless mode
+            # Launch browser in headless mode using system Chromium
             browser = await p.chromium.launch(
                 headless=True,
-                args=['--no-sandbox', '--disable-setuid-sandbox']
+                executable_path='/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
+                args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
             )
             
             try:
