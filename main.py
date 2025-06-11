@@ -47,19 +47,34 @@ class RedmineAutomator:
                 await page.wait_for_load_state('networkidle')
                 await page.goto(url, wait_until='networkidle')
                 
-                # Process notes based on notes_count
-                for i in range(notes_count):
+                # Parse notes from the input text (expecting format: 1] note1 \n 2] note2 etc.)
+                notes_list = []
+                lines = note_text.split('\n')
+                
+                for line in lines:
+                    line = line.strip()
+                    if line and ']' in line:
+                        # Extract text after the bracket
+                        parts = line.split(']', 1)
+                        if len(parts) == 2 and parts[0].strip().replace('[', '').isdigit():
+                            note_content = parts[1].strip()
+                            if note_content:
+                                notes_list.append(note_content)
+                
+                # If no properly formatted notes found, use the entire text as one note
+                if not notes_list:
+                    notes_list = [note_text]
+                
+                # Process each note separately
+                for i, current_note in enumerate(notes_list[:notes_count]):
                     # Click edit button
                     await page.click('a.icon-edit, a[href$="/edit"]')
                     
                     # Wait for the notes textarea to be available
                     await page.wait_for_selector('textarea#issue_notes')
                     
-                    # Format the note with numbering
-                    formatted_note = f"{i + 1}) {note_text}"
-                    
-                    # Fill the notes textarea
-                    await page.fill('textarea#issue_notes', formatted_note)
+                    # Fill the notes textarea with just the note content
+                    await page.fill('textarea#issue_notes', current_note)
                     
                     # Check the private notes checkbox
                     await page.check('input#issue_private_notes')
@@ -70,7 +85,8 @@ class RedmineAutomator:
                     # Wait for the page to reload
                     await page.wait_for_load_state('networkidle')
                 
-                return True, f"Successfully added {notes_count} note(s) to issue {issue_id}"
+                processed_count = min(len(notes_list), notes_count)
+                return True, f"Successfully added {processed_count} note(s) to issue {issue_id}"
                 
             except Exception as e:
                 return False, f"Error: {str(e)}"
