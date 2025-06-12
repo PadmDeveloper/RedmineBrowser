@@ -18,7 +18,7 @@ logging.basicConfig(
 # Bot token and authorized chat ID (prioritize Replit environment)
 BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN') or os.getenv('TELEGRAM_BOT_TOKEN')
 AUTHORIZED_CHAT_ID = os.environ.get('AUTHORIZED_CHAT_ID') or os.getenv('AUTHORIZED_CHAT_ID')
-FLASK_SERVER_URL = "http://localhost:5000"  # Change to your actual server URL when deployed
+FLASK_SERVER_URL = "https://redminebrowser.onrender.com/"  # Change to your actual server URL when deployed
 
 # Convert AUTHORIZED_CHAT_ID to int if it exists
 if AUTHORIZED_CHAT_ID:
