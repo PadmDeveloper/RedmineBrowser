@@ -2,7 +2,7 @@
 import os
 import asyncio
 import requests
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from dotenv import load_dotenv
 import logging
@@ -34,6 +34,14 @@ WAITING_FOR_ID, WAITING_FOR_NOTES_COUNT, WAITING_FOR_NOTE = range(3)
 # Store conversation data
 user_data = {}
 
+def get_main_keyboard():
+    """Create the main keyboard with command buttons"""
+    keyboard = [
+        [KeyboardButton("🚀 Start Server Check"), KeyboardButton("📝 Fill Form")],
+        [KeyboardButton("❌ Cancel"), KeyboardButton("❓ Help")]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command"""
@@ -54,11 +62,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # Check if Flask server is running
         response = requests.get(f"{FLASK_SERVER_URL}/", timeout=5)
         if response.status_code == 200:
-            await update.message.reply_text("✅ Server is active")
+            await update.message.reply_text(
+                "✅ Server is active\n\n🤖 Welcome! Use the buttons below to interact with the bot:",
+                reply_markup=get_main_keyboard()
+            )
         else:
-            await update.message.reply_text("❌ Server error")
+            await update.message.reply_text(
+                "❌ Server error\n\n🤖 Use the buttons below to interact with the bot:",
+                reply_markup=get_main_keyboard()
+            )
     except requests.exceptions.RequestException:
-        await update.message.reply_text("❌ Server is not responding")
+        await update.message.reply_text(
+            "❌ Server is not responding\n\n🤖 Use the buttons below to interact with the bot:",
+            reply_markup=get_main_keyboard()
+        )
 
 
 async def form_command(update: Update,
@@ -77,7 +94,10 @@ async def form_command(update: Update,
         await update.message.reply_text("❌ Unauthorized access")
         return ConversationHandler.END
 
-    await update.message.reply_text("📝 Please enter the issue ID:")
+    await update.message.reply_text(
+        "📝 Please enter the issue ID:",
+        reply_markup=ReplyKeyboardMarkup([['❌ Cancel']], resize_keyboard=True)
+    )
     return WAITING_FOR_ID
 
 
@@ -154,18 +174,30 @@ async def get_note_text(update: Update,
             result = response.json()
             if result.get('success'):
                 await update.message.reply_text(
-                    f"✅ Note successfully added to issue {user_data['issue_id']}"
+                    f"✅ Note successfully added to issue {user_data['issue_id']}",
+                    reply_markup=get_main_keyboard()
                 )
             else:
                 await update.message.reply_text(
-                    f"❌ Error: {result.get('error', 'Unknown error')}")
+                    f"❌ Error: {result.get('error', 'Unknown error')}",
+                    reply_markup=get_main_keyboard()
+                )
         else:
-            await update.message.reply_text("❌ Server error occurred")
+            await update.message.reply_text(
+                "❌ Server error occurred",
+                reply_markup=get_main_keyboard()
+            )
 
     except requests.exceptions.RequestException as e:
-        await update.message.reply_text(f"❌ Connection error: {str(e)}")
+        await update.message.reply_text(
+            f"❌ Connection error: {str(e)}",
+            reply_markup=get_main_keyboard()
+        )
     except Exception as e:
-        await update.message.reply_text(f"❌ Unexpected error: {str(e)}")
+        await update.message.reply_text(
+            f"❌ Unexpected error: {str(e)}",
+            reply_markup=get_main_keyboard()
+        )
 
     # Clear user data
     user_data.clear()
@@ -177,9 +209,41 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if not update.message:
         return ConversationHandler.END
         
-    await update.message.reply_text("❌ Operation cancelled")
+    await update.message.reply_text(
+        "❌ Operation cancelled",
+        reply_markup=get_main_keyboard()
+    )
     user_data.clear()
     return ConversationHandler.END
+
+async def handle_button_press(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle button presses from custom keyboard"""
+    if not update.message or not update.message.text:
+        return
+        
+    chat_id = update.effective_chat.id if update.effective_chat else None
+    if chat_id is None:
+        return
+
+    if chat_id != AUTHORIZED_CHAT_ID:
+        await update.message.reply_text("❌ Unauthorized access")
+        return
+
+    text = update.message.text
+
+    if text == "🚀 Start Server Check":
+        await start(update, context)
+    elif text == "📝 Fill Form":
+        await form_command(update, context)
+    elif text == "❓ Help":
+        await help_command(update, context)
+    elif text == "❌ Cancel":
+        await cancel(update, context)
+    else:
+        await update.message.reply_text(
+            "Please use the buttons below or type a command:",
+            reply_markup=get_main_keyboard()
+        )
 
 
 async def help_command(update: Update,
@@ -201,19 +265,26 @@ async def help_command(update: Update,
     help_text = """
 🤖 **Redmine Bot Commands:**
 
-/start - Check server status
-/form - Start form filling process
-/cancel - Cancel current operation
-/help - Show this help message
+🚀 Start Server Check - Check server status
+📝 Fill Form - Start form filling process
+❌ Cancel - Cancel current operation
+❓ Help - Show this help message
 
 **Process:**
-1. Use /form to start
+1. Use "📝 Fill Form" to start
 2. Enter issue ID
 3. Enter notes count
-4. Enter note text
+4. Enter note text in format:
+   1] First note text
+   2] Second note text
 5. Bot will process and confirm
+
+**Note Format Example:**
+1] Task completed successfully
+2] Need further review
+3] Final testing done
     """
-    await update.message.reply_text(help_text)
+    await update.message.reply_text(help_text, reply_markup=get_main_keyboard())
 
 
 def main():
@@ -249,6 +320,9 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(conv_handler)
+    
+    # Add handler for button presses (should be last to avoid conflicts)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_button_press))
 
     # Run the bot
     print("🤖 Bot starting...")
