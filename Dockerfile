@@ -5,6 +5,9 @@ From mcr.microsoft.com/playwright:v1.50.0-noble
 # 1. Set working directory
 WORKDIR /app
 
+# NEW: Install pip
+RUN apt-get update && apt-get install -y python3-pip
+
 # 2. Copy dependency file
 COPY requirements.txt ./
 
