@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: your-service-name
+    env: python
+    buildCommand: pip install -r requirements.txt && playwright install
+    startCommand: python run_services.py
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000  # let Render override this, just for fallback
+    build:
+      aptPackages:
+        - libnss3
+        - libxss1
+        - libasound2
+        - libatk-bridge2.0-0
+        - libgtk-3-0
+        - libdrm2
+        - libxcomposite1
+        - libxdamage1
+        - libxrandr2
+        - libcups2
+        - libgbm1
+        - libpango-1.0-0
+        - libpangocairo-1.0-0
+        - libatk1.0-0
+        - libatspi2.0-0
+        - libx11-xcb1
+        - libxshmfence1
+        - libxrender1
+        - libxcb1
+        - libxext6
+        - libgl1
