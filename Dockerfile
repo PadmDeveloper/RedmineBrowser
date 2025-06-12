@@ -1,0 +1,23 @@
+## Use Playwright's official Python image (includes browsers & deps)
+FROM mcr.microsoft.com/playwright/python:1.52.0
+
+# 1. Set working directory
+WORKDIR /app
+
+# 2. Copy dependency file
+COPY requirements.txt ./
+
+# 3. Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 4. Copy application code
+COPY . .
+
+# 5. Expose port for Flask
+EXPOSE 5000
+
+# 6. Environment variables are injected at runtime (via Docker -e or Render's env settings)
+#    No need to hardcode in Dockerfile.
+
+# 7. Start both services via your runner script
+CMD ["python", "run_services.py"]
