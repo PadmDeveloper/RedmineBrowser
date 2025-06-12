@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: your-service-name
+    name: RedmineBrowser
     env: python
     buildCommand: pip install -r requirements.txt && playwright install
     startCommand: python run_services.py
