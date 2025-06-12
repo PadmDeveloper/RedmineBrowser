@@ -304,16 +304,17 @@ def main():
 
     # Create conversation handler
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('form', form_command)],
+        entry_points=[CommandHandler('form', form_command),
+                     MessageHandler(filters.Regex(r'^📝 Fill Form$'), form_command)],
         states={
             WAITING_FOR_ID:
-            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_issue_id)],
+            [MessageHandler(filters.Regex(r'^❌ Cancel$'), cancel),MessageHandler(filters.TEXT & ~filters.COMMAND, get_issue_id)],
             WAITING_FOR_NOTES_COUNT:
-            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_notes_count)],
+            [MessageHandler(filters.Regex(r'^❌ Cancel$'), cancel),MessageHandler(filters.TEXT & ~filters.COMMAND, get_notes_count)],
             WAITING_FOR_NOTE:
-            [MessageHandler(filters.TEXT & ~filters.COMMAND, get_note_text)],
+            [MessageHandler(filters.Regex(r'^❌ Cancel$'), cancel),MessageHandler(filters.TEXT & ~filters.COMMAND, get_note_text)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler('cancel', cancel),MessageHandler(filters.Regex(r'^❌ Cancel$'), cancel)],
     )
 
     # Add handlers
