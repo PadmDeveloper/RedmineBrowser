@@ -9,7 +9,7 @@ WORKDIR /app
 COPY requirements.txt ./
 
 # 3. Install Python dependencies
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 # 4. Copy application code
 COPY . .
@@ -21,4 +21,4 @@ EXPOSE 5000
 #    No need to hardcode in Dockerfile.
 
 # 7. Start both services via your runner script
-CMD ["python", "run_services.py"]
+CMD ["python3", "run_services.py"]
